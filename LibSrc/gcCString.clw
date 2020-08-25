@@ -6,7 +6,6 @@
     END
   END
 
-!  INCLUDE('gcObject.inc'),ONCE
   INCLUDE('gcCString.inc'),ONCE
 
 
@@ -22,30 +21,45 @@ gcCString.Destruct     PROCEDURE!, PROTECTED, VIRTUAL
   SELF.Destroy()
 
 
+gcCString.Init    PROCEDURE(LONG pSize)!, VIRTUAL
+  CODE
+  SELF.Destroy()
+  IF pSize <= 1 THEN pSize = 1 END
+  SELF.Value &= NEW CSTRING(pSize)
+  SELF.Value[1] = '<0>'
+  
+
 gcCString.Destroy    PROCEDURE()!, VIRTUAL
   CODE
-  DISPOSE(SELF.Value)
+  IF NOT SELF.Value &= NULL THEN
+    DISPOSE(SELF.Value)
+  END
 
-  
-gcCString._New        PROCEDURE(LONG pSize) !, STATIC ! Causes GPF when calling as static
+
+gcCString._New        PROCEDURE(LONG pSize) !, STATIC ! Can only be called from a instantiated class, causes a GPF when called from a class reference
 sString               &gcCString
   CODE
-  IF pSize <= 1 THEN pSize = 1 END
-  SELF.DebugOutput('_New(' & pSize & ')')
   sString &= NEW gcCString
-  sString.Value[1] = '<0>'
+  sString.Init(pSize)
   RETURN sString
 
   
 ! Properties
 
 
-gcCString.Resize      PROCEDURE(LONG pSize)!, VIRTUAL
+gcCString.Resize      PROCEDURE(LONG pSize, BYTE pAppend=False)!, VIRTUAL
 sValue                &CSTRING
   CODE
-  sValue &= NEW CSTRING(pSize)
-  !SELF.Destroy()
-  SELF.Value &= sValue
+  sValue &= SELF.Value
+  IF pAppend THEN
+    SELF.Init(SIZE(SELF.Value) + pSize)
+  ELSE
+    SELF.Init(pSize)
+  END
+  IF NOT sValue &= NULL THEN
+    SELF.Value = sValue
+  END
+  DISPOSE(sValue)
 
   
 ! Debug
